@@ -1,0 +1,171 @@
+{% extends "layout.html" %}
+{% block content %}
+<nav class="navbar navbar-light bg-white border-bottom">
+  <div class="container">
+    <span class="navbar-text ms-auto d-flex align-items-center gap-2">
+      <span class="badge bg-secondary rounded-pill">{{ username[:1]|upper }}</span>
+      <span class="text-muted">{{ username }}</span>
+    </span>
+  </div>
+</nav>
+
+<div class="container-fluid">
+  <div class="row" style="height: calc(100vh - 170px);">
+    <!-- Sidebar -->
+    <div class="col-12 col-md-3 col-lg-2 border-end py-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="m-0">Previous Chats</h6>
+        <button id="newChatBtn" class="btn btn-sm btn-outline-primary">New</button>
+      </div>
+      <div id="chatList" class="list-group small"></div>
+    </div>
+
+    <!-- Chat area -->
+    <div class="col-12 col-md-9 col-lg-10 d-flex flex-column p-0">
+      <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="m-0">ColabChat</h5>
+        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#inviteModal">Invite</button>
+      </div>
+
+      <div id="messages" class="flex-grow-1 p-3 overflow-auto bg-dark"></div>
+
+      <div class="p-3 border-top">
+        <form id="chatForm" class="d-flex gap-2">
+          <input id="messageInput" class="form-control" placeholder="Type your message..." autocomplete="off">
+          <button class="btn btn-primary" type="submit">Send</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Invite Modal -->
+<div class="modal fade" id="inviteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Invite a collaborator</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p>Share this link to invite someone (placeholder):</p>
+        <input id="inviteLink" class="form-control" readonly value="{{ request.host_url }}signup">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="copyInvite">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentChatId = null;
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text) e.textContent = text;
+  return e;
+}
+
+function renderMessage(msg){
+  const wrap = el('div', 'd-flex my-2');
+  const bubble = el('div', 'p-2 rounded-3');
+  bubble.style.maxWidth = '75%';
+
+  if (msg.sender === 'user') {
+    wrap.classList.add('justify-content-end');
+    bubble.classList.add('bg-primary', 'text-white');
+  } else {
+    wrap.classList.add('justify-content-start');
+    bubble.classList.add('bg-white', 'border');
+  }
+
+  bubble.textContent = msg.text;
+  wrap.appendChild(bubble);
+  return wrap;
+}
+
+async function loadChats(){
+  const res = await fetch('/chats');
+  const data = await res.json();
+  const list = document.getElementById('chatList');
+  list.innerHTML = '';
+  (data.chats || []).forEach(c => {
+    const a = el('a', 'list-group-item list-group-item-action');
+    a.href = '#';
+    a.textContent = c.title || '(untitled)';
+    a.onclick = async (ev) => {
+      ev.preventDefault();
+      await selectChat(c.id);
+    };
+    list.appendChild(a);
+  });
+}
+
+async function selectChat(id){
+  const res = await fetch(`/chats/${id}`);
+  if (res.status !== 200) return;
+  const data = await res.json();
+  currentChatId = data.chat._id;
+  const box = document.getElementById('messages');
+  box.innerHTML = '';
+  (data.chat.messages || []).forEach(m => box.appendChild(renderMessage(m)));
+  box.scrollTop = box.scrollHeight;
+}
+
+async function ensureChat(){
+  if (currentChatId) return currentChatId;
+  const res = await fetch('/chats', { method: 'POST' });
+  const data = await res.json();
+  currentChatId = data.chatId;
+  await loadChats();
+  return currentChatId;
+}
+
+document.getElementById('chatForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const box = document.getElementById('messages');
+  const myMsg = { sender: 'user', text, timestamp: new Date().toISOString() };
+  box.appendChild(renderMessage(myMsg));
+  box.scrollTop = box.scrollHeight;
+  input.value = '';
+
+  const cid = await ensureChat();
+
+  const res = await fetch('/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: text, chatId: cid })
+  });
+  const data = await res.json();
+  if (data.error) return alert(data.error);
+
+  (data.messages || []).filter(m => m.sender === 'bot').forEach(m => {
+    box.appendChild(renderMessage(m));
+  });
+  box.scrollTop = box.scrollHeight;
+  loadChats();
+});
+
+document.getElementById('newChatBtn').addEventListener('click', async () => {
+  currentChatId = null;
+  await ensureChat();
+  document.getElementById('messages').innerHTML = '';
+});
+
+document.getElementById('copyInvite').addEventListener('click', async () => {
+  const input = document.getElementById('inviteLink');
+  input.select(); input.setSelectionRange(0, 99999);
+  try { await navigator.clipboard.writeText(input.value); } catch(e){}
+});
+
+window.addEventListener('load', async () => {
+  await loadChats();
+});
+</script>
+{% endblock %}
