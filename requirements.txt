@@ -4,3 +4,4 @@ pymongo
 bcrypt
 pyjwt
 python-dotenv
+langchain-groq
