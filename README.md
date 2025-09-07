@@ -18,3 +18,7 @@ A minimal full-stack chatbot scaffold with authentication, JWT sessions, MongoDB
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+
+## 🌐 Live Demo
+👉 Try it out here: [ColabChat]([https://colabchat.onrender.com/])
+![1st page](imgg.png)
