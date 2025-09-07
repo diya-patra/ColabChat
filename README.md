@@ -11,6 +11,9 @@ A minimal full-stack chatbot scaffold with authentication, JWT sessions, MongoDB
 - **Logging** of requests/responses to `logs/app.log` (passwords redacted)
 - **Environment variables** via `.env`
 - Simple **chatbot placeholder** (echo-like response)
+## 🌐 Live Demo
+👉 Try it out here: [ColabChat]([https://colabchat.onrender.com/])
+![1st page](imgg.png)
 
 ## Quickstart
 
@@ -19,6 +22,5 @@ python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-## 🌐 Live Demo
-👉 Try it out here: [ColabChat]([https://colabchat.onrender.com/])
-![1st page](imgg.png)
+
+
