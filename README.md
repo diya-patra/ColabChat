@@ -12,7 +12,7 @@ A minimal full-stack chatbot scaffold with authentication, JWT sessions, MongoDB
 - **Environment variables** via `.env`
 - Simple **chatbot placeholder** (echo-like response)
 ## 🌐 Live Demo
-👉 Try it out here: [ColabChat][https://colabchat.onrender.com/]
+👉 Try it out here: [ColabChat](https://colabchat.onrender.com/)
 ![1st page](imgg.png)
 
 ## Quickstart
